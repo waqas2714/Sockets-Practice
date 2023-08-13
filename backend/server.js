@@ -22,88 +22,25 @@ io.on('connection', (socket) => {
     socket.emit('welcome', `${name}, Welcome to Chatcord!`);
 
     socket.on('joined-room',(payload)=>{
-      socket.broadcast.to(room).emit('send-message', {message: `${payload} joined the chat.`, sender: name});
+      socket.broadcast.to(room).emit('recieve-message', {message: `${payload} joined the chat.`, sender: "Chat Bot"});
     })
 
-    socket.on('send-message',(payload)=>{
-      io.to(room).emit('send-message', {message: payload, sender: name});
+    socket.on('send', (payload)=>{
+      console.log("inside send");
+      io.to(room).emit('recieve-message', {message: payload, sender: name});
     })
 
     socket.on('leave-room', (payload)=>{
-      io.to(room).emit('send-message', {message: payload, sender: name});
+      io.to(room).emit('recieve-message', {message: payload, sender: "Chat Bot"});
     })
+
+    socket.on('disconnect', () => {
+      console.log(`${name} has disconnected from the room ${room}`);
+      io.to(room).emit('recieve-message', {message: `${name} was disconnected.`, sender: "Chat Bot"} )
+  });
 });
 
 server.listen(5000,()=>{
     console.log("Server running on port 5000.");
 })
 
-// const app = require('express')();
-// const server = require('http').createServer(app);
-// const socket = require('socket.io');
-
-// const io = socket(server, {
-//     cors: {
-//         origin: "http://localhost:3000",
-//         credentials: true,
-//     },
-// });
-
-// let rooms = {};
-
-// io.on('connection', (socket) => {
-//     const { name, room } = socket.handshake.query;
-//     console.log(`${name} has connected to the room ${room}`);
-
-//     socket.join(room);
-    
-//     socket.emit('welcome', `${name}, Welcome to Chatcord!`);
-
-//     socket.on('joined-room', (payload) => {
-//         if (!rooms[room]) {
-//             rooms[room] = [];
-//         }
-//         rooms[room].push({ name, socketId: socket.id });
-//         io.to(room).emit('users', rooms[room]);
-//     });
-
-//     socket.on('send-message',(payload)=>{
-//             io.to(room).emit('send-message', {message: payload, sender: name});
-//           })
-      
-//     socket.on('leave-room', (payload)=>{
-//           io.to(room).emit('send-message', {message: payload, sender: name});
-//     })
-
-//     socket.on('disconnect', () => {
-//         if (rooms[room]) {
-//             const index = rooms[room].findIndex(user => user.name === name);
-//             if (index !== -1) {
-//                 rooms[room].splice(index, 1);
-//                 io.to(room).emit('users', rooms[room]);
-//             }
-//         }
-//     });
-
-//     // ...
-// });
-
-// server.listen(5000, () => {
-//     console.log("Server running on port 5000.");
-// });
-
-// const STALE_USER_TIMEOUT = 10 * 60 * 1000; // 10 minutes (adjust as needed)
-
-// setInterval(() => {
-//     for (const roomName in rooms) {
-//         rooms[roomName] = rooms[roomName].filter(user => {
-//             const socket = io.sockets.connected[user.socketId];
-//             if (socket && socket.connected) {
-//                 return true; // User is still connected
-//             }
-//             return false; // User is stale, remove from list
-//         });
-
-//         io.to(roomName).emit('users', rooms[roomName]);
-//     }
-// }, STALE_USER_TIMEOUT);

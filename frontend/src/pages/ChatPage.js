@@ -6,43 +6,49 @@ const ChatPage = () => {
   const navigate = useNavigate();
   const name = localStorage.getItem("name");
   const room = localStorage.getItem("room");
-  const socket = useRef();
   const [welcome, setWelcome] = useState("");
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
-  socket.current = io("http://localhost:5000/", {
+
+  const socket = io("http://localhost:5000/", {
+    autoConnect: false,
     query: {
       name,
       room,
     },
   });
 
-  useEffect(() => {
-    if (socket.current) {
-      socket.current.on("welcome", (payload) => {
-        setWelcome(payload);
-      });
-      socket.current.on("send-message", (payload) => {
-        setMessages((prevMessages) => {
-          let newArray = [...prevMessages, payload];
-          console.log(newArray);
-          return newArray;
-        });
-      });
-      socket.current.emit('joined-room', name);
+  useEffect(()=>{
+    socket.connect();
 
+    return ()=>{
+      socket.disconnect();
     }
-  }, []);
+  },[])
+  
+  socket.on("welcome", (payload) => {
+    setWelcome(payload);
+  });
+  socket.on("recieve-message", (payload) => {
+    setMessages((prevMessages) => {
+      let newArray = [...prevMessages, payload];
+      console.log(newArray);
+      return newArray;
+    });
+  });
+  socket.emit('joined-room', name);
+  
 
   const leaveRoom = () => {
     localStorage.clear();
     navigate("/");
-    socket.current.emit('leave-room', 'I left the chat.');   
+    socket.emit('leave-room', 'User has left the chat.');   
   };
 
   const sendMessage = (e) => {
     e.preventDefault();
-    socket.current.emit("send-message", message);
+    console.log(message);
+    socket.emit('send', message);
     setMessage("");
   };
 
